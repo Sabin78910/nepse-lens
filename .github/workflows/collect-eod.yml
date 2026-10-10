@@ -1,0 +1,72 @@
+name: Collect end of day
+
+# Saves the day's full floorsheet aggregated per (date, symbol, broker), daily prices, index history,
+# broker accumulation files and the IPO calendar to the `data` branch.
+# NEPSE only serves the LATEST day's floorsheet, so this runs several times after the close and once
+# before the next open; every run is idempotent and also fills any missing price days (catch-up).
+on:
+  schedule:
+    - cron: "45 9 * * 1-5"    # 15:30 NPT
+    - cron: "30 11 * * 1-5"   # 17:15 NPT
+    - cron: "15 15 * * 1-5"   # 21:00 NPT
+    - cron: "30 2 * * 1-6"    # 08:15 NPT next morning, before the floorsheet resets
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Business date YYYY-MM-DD (floorsheet only works for NEPSE's latest day)"
+        required: false
+      backfill_days:
+        description: "Also backfill this many trading days of daily prices (about 1 year is available)"
+        required: false
+        default: "0"
+      rebuild:
+        description: "Rebuild accumulation files"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-data
+  cancel-in-progress: false
+
+jobs:
+  eod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      TZ: Asia/Kathmandu
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: collector/requirements.txt }
+      - run: pip install -r collector/requirements.txt
+      - name: Check out the data branch
+        run: |
+          if git ls-remote --exit-code --heads origin data >/dev/null; then
+            git clone -q --depth 1 --branch data "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" data
+          else
+            mkdir data && cd data && git init -q -b data && git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          fi
+      - name: Backfill prices
+        if: github.event_name == 'workflow_dispatch' && inputs.backfill_days != '0' && inputs.backfill_days != ''
+        run: cd collector && python -m nepse_lens backfill-prices --data ../data --days "${{ inputs.backfill_days }}"
+      - name: End of day
+        run: |
+          cd collector
+          ARGS="--catchup 15"
+          [ -n "${{ inputs.date }}" ] && ARGS="$ARGS --date ${{ inputs.date }}"
+          [ "${{ inputs.rebuild }}" = "true" ] && ARGS="$ARGS --rebuild"
+          # Refresh the securities list once a week (Mondays) or when missing.
+          [ "$(date +%u)" = "1" ] && ARGS="$ARGS --meta"
+          python -m nepse_lens eod --data ../data $ARGS
+      - name: Commit
+        run: |
+          cd data
+          git config user.name "nepse-lens-collector"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No changes"; exit 0; }
+          git commit -qm "Data $(date +%F) ($(git diff --cached --name-only | wc -l) files)"
+          git push -q origin data

@@ -1,0 +1,28 @@
+name: Deploy Worker
+
+# Optional Cloudflare Worker cache. Deploys only when the CLOUDFLARE_API_TOKEN secret exists.
+on:
+  push:
+    branches: [main]
+    paths: ["worker/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Skip without Cloudflare secrets
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::notice::CLOUDFLARE_API_TOKEN not set; the app uses the static JSON instead."
+      - uses: actions/setup-node@v6
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with: { node-version: 22 }
+      - if: env.CLOUDFLARE_API_TOKEN != ''
+        run: cd worker && npx --yes wrangler@4 deploy

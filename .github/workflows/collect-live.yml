@@ -1,0 +1,49 @@
+name: Collect live market
+
+# During NEPSE hours (Mon-Fri 11:00-15:00 Nepal time = 05:15-09:15 UTC) take a market snapshot about
+# every 10 minutes and force-push it as the only commit on the `live` branch (no history bloat).
+# GitHub may skip scheduled runs; each run is independent, so a skipped run just means older data.
+on:
+  schedule:
+    - cron: "*/10 5-9 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Snapshot even when the market is closed"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: collect-live
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TZ: Asia/Kathmandu  # the wrapper derives request ids from the local date; NEPSE uses Nepal time
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: collector/requirements.txt }
+      - run: pip install -r collector/requirements.txt
+      - name: Holidays from the data branch (optional)
+        run: |
+          mkdir -p data/meta
+          git fetch -q --depth 1 origin data 2>/dev/null && git show origin/data:meta/holidays.json > data/meta/holidays.json 2>/dev/null || true
+      - name: Snapshot
+        run: cd collector && python -m nepse_lens live --out ../out --data ../data ${{ (github.event_name == 'workflow_dispatch' && inputs.force) && '--force' || '' }}
+      - name: Publish to the live branch
+        run: |
+          [ -f out/latest.json ] || { echo "No snapshot (market closed)"; exit 0; }
+          cd out
+          git init -q -b live
+          git config user.name "nepse-lens-collector"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add latest.json
+          git commit -qm "Live snapshot $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" live

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NEPSE Lens</string>
+    <string name="title_activity_main">NEPSE Lens</string>
+    <string name="package_name">com.sabinkhanal.nepselens</string>
+    <string name="custom_url_scheme">com.sabinkhanal.nepselens</string>
+</resources>

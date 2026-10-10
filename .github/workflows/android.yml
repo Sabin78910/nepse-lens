@@ -1,0 +1,52 @@
+name: Android AAB
+
+# Builds the Capacitor Android app as a release AAB (JDK 21). Signs it only when the
+# KEYSTORE_BASE64 / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD secrets exist; otherwise unsigned.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", "docs/**", "store/**", "collector/**", "worker/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with: { node-version: 22, cache: npm }
+      - uses: actions/setup-java@v6
+        with: { distribution: temurin, java-version: "21" }
+      - uses: gradle/actions/setup-gradle@v6
+      - run: npm ci
+      - run: npm run build && npx cap sync android
+      - name: Decode upload key (if configured)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+            echo "Signing the AAB with the upload key."
+          else
+            echo "::notice::No KEYSTORE_BASE64 secret, building an unsigned AAB."
+          fi
+      - name: Build release AAB
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: cd android && ./gradlew bundleRelease --no-daemon
+      - uses: actions/upload-artifact@v6
+        with:
+          name: nepse-lens-aab
+          path: android/app/build/outputs/bundle/release/*.aab

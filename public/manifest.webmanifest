@@ -1,0 +1,17 @@
+{
+  "name": "NEPSE Lens — Nepal stock market",
+  "short_name": "NEPSE Lens",
+  "description": "NEPSE market board, broker accumulation, watchlist alerts and portfolio P/L. Delayed, unofficial data.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
+  "categories": ["finance", "business"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
