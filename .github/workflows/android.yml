@@ -28,6 +28,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - run: npm ci
       - run: npm run build && npx cap sync android
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
       - name: Decode upload key (if configured)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
