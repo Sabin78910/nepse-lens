@@ -24,7 +24,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Skip if the queue is already full
         id: queue
         run: echo "open=$(gh issue list --state open --label ready --json number --jq length)" >> "$GITHUB_OUTPUT"
