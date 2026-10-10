@@ -28,7 +28,7 @@ jobs:
       TZ: Asia/Kathmandu  # the wrapper derives request ids from the local date; NEPSE uses Nepal time
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12", cache: pip, cache-dependency-path: collector/requirements.txt }
       - run: pip install -r collector/requirements.txt
       - name: Holidays from the data branch (optional)

@@ -21,7 +21,7 @@ jobs:
       - name: Skip without Cloudflare secrets
         if: env.CLOUDFLARE_API_TOKEN == ''
         run: echo "::notice::CLOUDFLARE_API_TOKEN not set; the app uses the static JSON instead."
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         if: env.CLOUDFLARE_API_TOKEN != ''
         with: { node-version: 22 }
       - if: env.CLOUDFLARE_API_TOKEN != ''
