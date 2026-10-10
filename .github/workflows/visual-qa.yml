@@ -1,0 +1,88 @@
+name: Visual QA
+# After every deploy, open the live site in a real browser (phone + desktop, light + dark).
+# Layout overflow, load failures or JavaScript errors become a `ready` issue for the cloud agent.
+# Every Monday (or on demand) Claude also reviews the screenshots against the redesign brief.
+on:
+  workflow_run:
+    workflows: ["Deploy to GitHub Pages"]
+    types: [completed]
+  schedule:
+    - cron: "30 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      review:
+        description: "Also run the AI design review"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+  id-token: write
+
+concurrency:
+  group: visual-qa
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SITE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - name: Install a browser
+        run: |
+          mkdir -p /tmp/qa && cd /tmp/qa && npm init -y >/dev/null && npm i playwright@1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+      - name: Check the live site
+        id: check
+        run: node .github/scripts/visual-qa.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: screenshots, path: shots/ }
+      - name: Queue a fix for the agent
+        if: steps.check.outputs.problems == 'yes'
+        run: |
+          open=$(gh issue list --state open --label visual-qa --json number --jq length)
+          recent=$(gh issue list --state all --label visual-qa --search "created:>=$(date -u -d '7 days ago' +%F)" --json number --jq length)
+          if [ "$open" != "0" ] || [ "$recent" -ge 3 ]; then echo "Not opening another issue (open=$open, this week=$recent)"; exit 0; fi
+          {
+            echo "## Goal"; echo "Fix the problems an automated browser found on the live site ($SITE)."; echo
+            echo "## Acceptance criteria"; cat problems.md
+            echo "- [ ] Tests added or updated and passing; lint clean"; echo
+            echo "Screenshots: artifact **screenshots** of $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > body.md
+          gh issue create --title "Visual QA: fix layout problems on the live site" --body-file body.md --label ready --label visual-qa
+          gh workflow run claude-agent.yml
+      - name: AI design review
+        if: github.event_name == 'schedule' || inputs.review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          allowed_bots: "github-actions"
+          prompt: |
+            You are a senior product designer reviewing the LIVE site. Screenshots are in ./shots
+            (phone 390px and desktop 1280px, light and dark). The design brief is in the issues titled
+            "Modern redesign" (gh issue list --state all --search "Modern redesign in:title", then gh issue view N).
+            Look at every screenshot. If there are concrete visual defects or clear gaps against the brief
+            (clipped or overlapping text, poor contrast, unstyled controls, misalignment, large empty areas,
+            inconsistent spacing, missing dark-mode styling), open ONE issue:
+            Save each body with the Write tool to .issue-body.md, then run the single-line command (multi-line Bash commands are blocked):
+            gh issue create --label ready --label design-review --title "Design review fixes" --body-file .issue-body.md
+            (body: the goal, then up to 6 specific checkbox fixes)
+            Do nothing if an open issue labelled design-review already exists or the design is polished.
+            Do not change any code.
+          claude_args: --max-turns 25 --allowedTools "Read,Write,Glob,Bash(gh issue list:*),Bash(gh issue view:*),Bash(gh issue create:*),Bash(ls:*)"
+      - name: Start the agent if work was queued
+        if: always() && (github.event_name == 'schedule' || inputs.review)
+        run: |
+          sleep 15  # the issue list can lag right after creation; the agent exits fast if nothing is queued
+          gh workflow run claude-agent.yml
