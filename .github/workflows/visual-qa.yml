@@ -34,8 +34,8 @@ jobs:
       SITE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with: { node-version: 22 }
       - name: Install a browser
         run: |
@@ -44,7 +44,7 @@ jobs:
       - name: Check the live site
         id: check
         run: node .github/scripts/visual-qa.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with: { name: screenshots, path: shots/ }
       - name: Queue a fix for the agent
