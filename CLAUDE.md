@@ -1,30 +1,40 @@
 # NEPSE Lens
-Purpose: Mobile-first Nepal Stock Exchange app (React, TS, Vite, Capacitor) with a Python data collector.
-Data is delayed and unofficial; never fake market data. Label samples as samples.
+Nepal stock market board, broker accumulation, watchlist alerts and portfolio.
+
+## Stack
+React 19 · TypeScript (strict) · Vite · Vitest · ESLint. Installable PWA with offline support.
+Design: trading terminal: #070B14, green up and red down with arrows so colour is never the only signal,
+Inter with tabular numbers and JetBrains Mono.
 
 ## Commands
-- Test: `npm test` and `cd collector && python -m pytest -q`
-- Lint: `npm run lint && npm run typecheck`
-- Build: `npm run build`
+- Dev: `npm run dev` · Build: `npm run build`
+- Test: `npm test` · Lint: `npm run lint && npm run typecheck`
 
 ## Architecture
-- src/lib/*.ts: pure logic with tests (format lakh/crore, fees, indicators, accumulation, alerts, market clock, portfolio, api)
-- src/pages, src/components: UI. Hash routes: #/market, #/stock/SYM, #/watch, #/brokers[/ID], #/portfolio, #/more
-- collector/nepse_lens: Python collector (NepseUnofficialApi wrapper). aggregate.py and market.py are pure and tested.
-- Data: `live` branch = latest.json (force-pushed); `data` branch = history (see README "Data layout").
-- public/sample: a recorded real snapshot (2026-10-09) used when live data is unavailable.
-- worker/: optional Cloudflare Worker cache; deploys only with CLOUDFLARE_API_TOKEN.
-- NEPSE trades Mon-Fri 11:00-15:00 NPT since April 2026 (Sun-Thu before). Holidays come from meta/holidays.json.
+- `src/lib/` indicators, fee maths and formatting · `collector/` scheduled data collection
+- Data lands on the `live` and `data` branches; the app reads JSON, never scrapes at runtime.
 
-## Rules
-- Read only the files you need; do not scan the whole repo or public/sample.
-- Every behavior change needs a test. Run tests and lint before finishing.
-- No new dependencies, permissions, or signing/secrets changes without asking.
-- Never commit secrets, keystores, .env files, or e-mail addresses (strip them from NEPSE company data).
-- Keep collector requests polite: one at a time, pauses between requests, no new high-frequency jobs.
-- Keep PRs under ~300 changed lines; one issue per PR.
-- Be concise: diffs plus a 3-line summary.
-- If tests still fail after 3 attempts, stop and report the blocker.
+## Data rules
+- Label data delayed and unofficial, never investment advice.
+- Broker accumulation is net buy minus sell since collection began, not real holdings. Say so in the UI.
+- NEPSE trades Monday to Friday. Collectors must be safe to re-run and catch up on missed days.
+- Cross-device sync uses the shared Sabin Labs ID: the sync code in localStorage key `sabin-labs-sync-code`,
+  shared by every app on sabin78910.github.io. Never log it or send it anywhere but sync-api.
 
-## Definition of done
-Lint clean, tests pass, CI green, short summary, PR opened as draft.
+## Testing rules
+- Every behaviour change needs a test. Pure logic in `src/*.ts` is unit-tested; components get the
+  behaviour test, not the markup. Run lint, typecheck and tests before finishing.
+
+## Frontend rules
+- Keep the existing design system, dark-first with a working light theme. Editorial layouts, not dashboard
+  grids. Respect `prefers-reduced-motion`, keep AA contrast and 44px targets.
+- Self-host fonts with @fontsource; a Google Fonts link blocks first paint and costs ~2s on mobile.
+- Keep gzipped JS under ~180KB and Lighthouse mobile performance at 90+.
+
+## Security and git
+- Never commit secrets, keystores, .env files or email addresses.
+- Keep the Content-Security-Policy strict; add a host to connect-src only when a feature needs it.
+- `main` is protected: branch, open a PR, merge when CI is green. One issue per PR, under ~300 lines.
+
+## Done when
+Lint clean, tests pass, CI green, PR opened with a three line summary.
