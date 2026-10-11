@@ -17,6 +17,9 @@
     "@capacitor/android": "^8.5.3",
     "@capacitor/core": "^8.5.3",
     "@capacitor/local-notifications": "^8.3.1",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@fontsource/noto-sans-devanagari": "^5.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
