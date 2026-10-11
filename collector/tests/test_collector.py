@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
@@ -110,6 +110,45 @@ def test_accum_docs_index_only_dates_with_trades():
     assert docs["NABIL"]["dates"] == ["2026-10-08", "2026-10-09"]
     assert [0, 58, 150, 20, 75100, 10020] in docs["NABIL"]["r"]
     assert [1, 45, 5, 0, 2550, 0] in docs["NABIL"]["r"]
+
+
+def _days(n):
+    return [(date(2026, 1, 1) + timedelta(days=i)).isoformat() for i in range(n)]
+
+
+def _totals(docs):
+    t = {}
+    for sym, doc in docs.items():
+        for r in doc["r"]:
+            acc = t.setdefault((sym, r[1]), [0, 0, 0, 0])
+            for k in range(4):
+                acc[k] += r[2 + k]
+    return t
+
+
+def test_accum_rollup_boundaries_and_totals():
+    ds = _days(120)  # Jan 1 .. Apr 30
+    daily = {d: {("NABIL", 58): [10, 2, 1000, 200], ("NABIL", 34): [1, 5, 100, 500]} for d in ds}
+    full = A.accum_docs(daily, keep=10**6)
+    docs = A.accum_docs(daily)
+    dates = docs["NABIL"]["dates"]
+    assert dates[0] == "2026-01"  # days 0..29 (Jan 1-30) are rolled up
+    assert dates[1:] == ds[30:] and len([d for d in dates if not A.is_rollup(d)]) == 90
+    assert len(docs["NABIL"]["r"]) == 2 * 91
+    assert _totals(docs) == _totals(full)
+    jan = [r for r in docs["NABIL"]["r"] if r[0] == 0 and r[1] == 58][0]
+    assert jan[2:] == [300, 60, 30000, 6000]
+
+
+def test_accum_rollup_exactly_90_days_stays_daily():
+    docs = A.accum_docs({d: {("X", 1): [1, 0, 10, 0]} for d in _days(90)})
+    assert docs["X"]["dates"] == _days(90)
+
+
+def test_accum_rollup_month_split_keeps_sorted_labels():
+    docs = A.accum_docs({d: {("X", 1): [1, 0, 10, 0]} for d in _days(100)})  # day 10 is Jan 11
+    d = docs["X"]["dates"]
+    assert d[0] == "2026-01" and d[1] == "2026-01-11" and d == sorted(d)
 
 
 def test_window_dates():

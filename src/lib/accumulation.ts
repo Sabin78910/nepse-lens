@@ -11,6 +11,9 @@ export interface AccumDoc {
   r: [number, number, number, number, number, number][];
 }
 
+/** Days older than the collector's daily window are rolled into monthly rows dated 'YYYY-MM'. */
+export const isRollup = (date: string): boolean => date.length === 7;
+
 export interface BrokerNet {
   broker: number;
   buyQty: number;
@@ -31,10 +34,10 @@ export interface BrokerNet {
 export function windowDates(doc: AccumDoc, window: Window, allDates?: string[]): Set<number> {
   const n = WINDOW_DAYS[window];
   if (n === 0) return new Set(doc.dates.map((_, i) => i));
-  const market = (allDates && allDates.length ? [...allDates] : [...doc.dates]).sort();
+  const market = (allDates && allDates.length ? [...allDates] : [...doc.dates]).filter((d) => !isRollup(d)).sort();
   const keep = new Set(market.slice(-n));
   const out = new Set<number>();
-  doc.dates.forEach((d, i) => keep.has(d) && out.add(i));
+  doc.dates.forEach((d, i) => !isRollup(d) && keep.has(d) && out.add(i));
   return out;
 }
 
