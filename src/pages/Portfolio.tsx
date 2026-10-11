@@ -1,8 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Card, Segmented, useApp } from "../components/ui";
 import { holdings, totals, valueHoldings, type Txn } from "../lib/portfolio";
 import { formatChange, formatPct, formatPrice, formatQty, formatRs, ARROW, direction } from "../lib/format";
 import { nptDateString } from "../lib/market";
+import { dedupe, parseCsv, toCsv, toJson, type CsvError } from "../lib/portfolioCsv";
+
+function download(name: string, body: string, type: string) {
+  const url = URL.createObjectURL(new Blob([body], { type }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function Portfolio() {
   const { data, lang, tr, txns, setTxns, go } = useApp();
@@ -13,6 +23,18 @@ export default function Portfolio() {
   const [price, setPrice] = useState("");
   const [date, setDate] = useState(today);
   const [err, setErr] = useState<string | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [importErrs, setImportErrs] = useState<CsvError[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const importFile = async (file: File) => {
+    const known = new Set(data.securities.map((x) => x.s));
+    const res = parseCsv(await file.text(), known);
+    const { added, duplicates } = dedupe(txns, res.txns);
+    if (added.length) setTxns([...txns, ...added]);
+    setImportErrs(res.errors);
+    setImportMsg(tr("importDone", { added: String(added.length), dupes: String(duplicates) }));
+  };
 
   const prices = useMemo(() => new Map(data.stocks.map((s) => [s.symbol, { ltp: s.ltp, change: s.change }])), [data.stocks]);
   const vals = useMemo(() => valueHoldings(holdings(txns), prices, today), [txns, prices, today]);
@@ -86,7 +108,22 @@ export default function Portfolio() {
             </li>
           ))}
         </ul>
-        <p className="muted small">Saved only on this device.</p>
+        <div className="txn-form">
+          <button className="ghost" onClick={() => download(`nepse-lens-${today}.csv`, toCsv(txns), "text/csv")}>{tr("exportCsv")}</button>
+          <button className="ghost" onClick={() => download(`nepse-lens-${today}.json`, toJson(txns), "application/json")}>{tr("exportJson")}</button>
+          <button className="ghost" onClick={() => fileRef.current?.click()}>{tr("importCsv")}</button>
+          <input ref={fileRef} type="file" accept=".csv,text/csv" hidden aria-label={tr("importCsv")}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) void importFile(f); e.target.value = ""; }} />
+        </div>
+        <p className="muted small">{tr("importFormat")}</p>
+        {importMsg && <p role="status">{importMsg}</p>}
+        {importErrs.length > 0 && (
+          <div role="alert" className="error">
+            <p>{tr("importErrors", { n: String(importErrs.length) })}</p>
+            <ul>{importErrs.map((e) => <li key={e.line}>{tr("importLine", { line: String(e.line), message: e.message })}</li>)}</ul>
+          </div>
+        )}
+        <p className="muted small">{tr("backupNote")}</p>
       </Card>
     </div>
   );

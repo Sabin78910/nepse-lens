@@ -99,6 +99,14 @@ const en = {
   loading: "Loading market data…",
   error: "Could not load data. Check your connection.",
   retry: "Retry",
+  exportCsv: "Export CSV",
+  exportJson: "Export JSON",
+  importCsv: "Import CSV",
+  importFormat: "CSV columns: Symbol, Side, Qty, Price, Date (YYYY-MM-DD). Side is buy, sell or bonus.",
+  importDone: "Imported {added} transactions, skipped {dupes} duplicates.",
+  importErrors: "{n} rows were not imported:",
+  importLine: "Line {line}: {message}",
+  backupNote: "Saved only on this device. Export a copy to keep it safe when you change phones.",
 };
 
 export type Key = keyof typeof en;
@@ -202,6 +210,14 @@ const ne: Record<Key, string> = {
   loading: "बजार डाटा लोड हुँदै…",
   error: "डाटा लोड हुन सकेन। इन्टरनेट जाँच गर्नुहोस्।",
   retry: "फेरि प्रयास",
+  exportCsv: "CSV निर्यात",
+  exportJson: "JSON निर्यात",
+  importCsv: "CSV आयात",
+  importFormat: "CSV स्तम्भ: Symbol, Side, Qty, Price, Date (YYYY-MM-DD)। Side: buy, sell वा bonus।",
+  importDone: "{added} कारोबार आयात भयो, {dupes} दोहोरिएका छोडियो।",
+  importErrors: "{n} पङ्क्ति आयात भएनन्:",
+  importLine: "लाइन {line}: {message}",
+  backupNote: "यो डिभाइसमा मात्र सुरक्षित छ। फोन बदल्दा हराउन नदिन प्रतिलिपि निर्यात गर्नुहोस्।",
 };
 
 export const STRINGS: Record<Lang, Record<Key, string>> = { en, ne };
