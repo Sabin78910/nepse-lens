@@ -36,12 +36,12 @@ jobs:
           github_token: ${{ github.token }}
           allowed_bots: "github-actions"
           prompt: |
-            You are the product lead for this repo. Read CLAUDE.md and README.md, skim the code structure, and list
+            You are the product lead for this repo. Read CLAUDE.md, docs/FEEL.md and README.md, skim the code structure, and list
             recent issues (gh issue list --state all -L 60) so you do not repeat past work.
             Use web search to check what the top-ranked apps in this category do that this one does not yet do
             (features, polish, rewarding moments that respect users, accessibility, performance, security).
             Then open AT MOST 2 issues, each small enough for one PR under ~300 changed lines, with this body:
-            ## Goal / ## Why (research, with the source URL) / ## Acceptance criteria (checkboxes, including tests) / ## Out of scope.
+            ## Feel (anticipation, variable reward, visible progress, completion, or utility) / ## Goal / ## Why (research, with the source URL) / ## Acceptance criteria (checkboxes, including tests) / ## Out of scope.
             Save each body with the Write tool to .issue-body.md, then run the single-line command (multi-line Bash commands are blocked):
             gh issue create --label ready --title "..." --body-file .issue-body.md
             Rules: no duplicates of open or closed issues; no new dependencies, permissions, accounts, secrets or
