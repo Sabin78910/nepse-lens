@@ -1,4 +1,5 @@
 import { useId, useMemo, useState } from "react";
+import type { BrokerSeries } from "../lib/accumulation";
 import { sma } from "../lib/indicators";
 import { formatCompact, formatPrice, type Lang } from "../lib/format";
 
@@ -130,5 +131,37 @@ export function NetBars({ rows, name, lang }: { rows: { broker: number; netQty: 
         );
       })}
     </ul>
+  );
+}
+
+/** Cumulative net quantity lines per broker; accumulators solid green, distributors dashed red, each labelled #ID. */
+export function BrokerLines({ dates, series, lang }: { dates: string[]; series: BrokerSeries[]; lang: Lang }) {
+  const W = 320, H = 140, PX = 30;
+  const all = series.flatMap((s) => s.values);
+  const lo = Math.min(0, ...all), hi = Math.max(0, ...all);
+  const span = hi - lo || 1;
+  const y = (v: number) => H - 4 - ((v - lo) / span) * (H - 8);
+  const x = (i: number) => 2 + (i / Math.max(1, dates.length - 1)) * (W - PX - 4);
+  const summary = series.map((s) => `Broker ${s.broker} ${s.kind === "acc" ? "accumulating" : "distributing"}, net change ${s.change > 0 ? "+" : ""}${formatCompact(s.change, lang)}`).join("; ");
+  return (
+    <figure className="chart">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Cumulative net quantity by broker, ${dates[0]} to ${dates.at(-1)}. ${summary}`} style={{ width: "100%" }}>
+        <line x1={0} x2={W - PX} y1={y(0)} y2={y(0)} stroke="var(--muted)" strokeWidth={0.5} />
+        {series.map((s) => {
+          const color = s.kind === "acc" ? "var(--up)" : "var(--down)";
+          const d = s.values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+          return (
+            <g key={s.broker}>
+              <path d={d} fill="none" stroke={color} strokeWidth={1.8} strokeDasharray={s.kind === "dist" ? "5 3" : undefined} />
+              <text x={W - PX + 3} y={y(s.values.at(-1) ?? 0) + 3} fontSize={9} fill={color}>#{s.broker}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="muted small tabular" style={{ display: "flex", justifyContent: "space-between" }}>
+        <span>{dates[0]}</span>
+        <span>{dates.at(-1)}</span>
+      </div>
+    </figure>
   );
 }

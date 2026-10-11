@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, Change, Segmented, useApp } from "../components/ui";
-import { NetBars, PriceChart } from "../components/Charts";
+import { BrokerLines, NetBars, PriceChart } from "../components/Charts";
 import { loadData } from "../lib/api";
 import { SRC } from "../useMarket";
 import type { PriceRow } from "../lib/data";
-import { netByBroker, topAccumulators, topDistributors, concentration, type AccumDoc, type Window } from "../lib/accumulation";
+import { brokerSeries, netByBroker, topAccumulators, topDistributors, concentration, type AccumDoc, type Window } from "../lib/accumulation";
 import { formatCompact, formatPrice, formatQty } from "../lib/format";
 import { highLow, periodReturn, rsi } from "../lib/indicators";
 import { newAlert, validateAlert, describeAlert, type AlertKind } from "../lib/alerts";
@@ -41,6 +41,7 @@ export default function Stock({ symbol }: { symbol: string }) {
   const bars = useMemo(() => (prices ?? []).slice(-RANGES[range]).map((p) => ({ date: p[0], close: p[4], volume: p[5] })), [prices, range]);
   const marketDays = data.manifest.floorsheetDays;
   const rows = useMemo(() => (accum ? netByBroker(accum, win, marketDays) : []), [accum, win, marketDays]);
+  const lines = useMemo(() => (accum ? brokerSeries(accum, win, marketDays) : null), [accum, win, marketDays]);
   const acc = topAccumulators(rows, 8);
   const dist = topDistributors(rows, 8);
   const hl = highLow(closes.slice(-260));
@@ -105,6 +106,15 @@ export default function Stock({ symbol }: { symbol: string }) {
           <>
             <NetBars rows={[...acc.slice(0, 5), ...dist.slice(0, 5).reverse()]} name={name} lang={lang} />
             <p className="muted small">Top-5 accumulators hold {concentration(rows, 5).toFixed(1)}% of bought volume as net buys.</p>
+            {win === "1D" ? (
+              <p className="muted small">Pick 1W or longer to see accumulation over time.</p>
+            ) : lines && lines.series.length > 0 && lines.dates.length > 1 ? (
+              <>
+                <h3>Cumulative net by top brokers</h3>
+                <BrokerLines dates={lines.dates} series={lines.series} lang={lang} />
+                <p className="muted small">Solid = accumulating, dashed = distributing.</p>
+              </>
+            ) : null}
             <div className="grid-2">
               <BrokerTable title={tr("accumulators")} rows={acc} name={name} />
               <BrokerTable title={tr("distributors")} rows={dist} name={name} />

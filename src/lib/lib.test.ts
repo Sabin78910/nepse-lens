@@ -154,6 +154,23 @@ describe("accumulation", () => {
   it("builds a cumulative net series for the chart", () => {
     expect(Acc.cumulativeNet(doc, 58).map((p) => p.net)).toEqual([1000, 1100, 800]);
   });
+  it("aligns top broker series to the window", () => {
+    const all = Acc.brokerSeries(doc, "ALL");
+    expect(all.dates).toEqual(doc.dates);
+    expect(all.series.map((s) => [s.broker, s.kind, s.values, s.change])).toEqual([
+      [58, "acc", [1000, 1100, 800], 800],
+      [34, "dist", [-1000, -1000, -500], -500],
+    ]);
+    const w = Acc.brokerSeries(doc, "1W", [...doc.dates, "2026-10-12"], 3);
+    expect(w.dates).toEqual(doc.dates);
+    const two = Acc.brokerSeries(doc, "1D");
+    expect(two.dates).toEqual(["2026-10-09"]);
+    expect(two.series.map((s) => [s.broker, s.values])).toEqual([[34, [500]], [58, [-300]]]);
+  });
+  it("limits series to n brokers per side", () => {
+    const d: Acc.AccumDoc = { s: "X", dates: ["a"], r: [[0, 1, 5, 0, 0, 0], [0, 2, 4, 0, 0, 0], [0, 3, 0, 9, 0, 0]] };
+    expect(Acc.brokerSeries(d, "ALL", undefined, 1).series.map((s) => s.broker)).toEqual([1, 3]);
+  });
   it("measures concentration", () => {
     const rows = Acc.netByBroker(doc, "ALL");
     expect(Acc.concentration(rows, 1)).toBeCloseTo((800 / 1700) * 100);
