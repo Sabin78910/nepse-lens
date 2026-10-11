@@ -146,6 +146,18 @@ describe("accumulation", () => {
   it("uses the market's dates so a stale stock shows nothing for 1D", () => {
     expect(Acc.netByBroker(doc, "1D", [...doc.dates, "2026-10-11"])).toEqual([]);
   });
+  it("includes rolled-up months in ALL but ignores them in day windows", () => {
+    const rolled: Acc.AccumDoc = {
+      s: "NABIL",
+      dates: ["2026-04", "2026-10-08", "2026-10-09"],
+      r: [[0, 58, 1000, 0, 500000, 0], [1, 58, 200, 0, 100000, 0], [2, 58, 0, 50, 0, 25000]],
+    };
+    expect(Acc.isRollup("2026-04")).toBe(true);
+    expect(Acc.isRollup("2026-10-09")).toBe(false);
+    expect(Acc.netByBroker(rolled, "ALL")[0].netQty).toBe(1150);
+    expect(Acc.netByBroker(rolled, "3M")[0].netQty).toBe(150);
+    expect(Acc.netByBroker(rolled, "3M", ["2026-04", "2026-10-08", "2026-10-09"])[0].netQty).toBe(150);
+  });
   it("ranks accumulators and distributors", () => {
     const rows = Acc.netByBroker(doc, "ALL");
     expect(Acc.topAccumulators(rows).map((r) => r.broker)).toEqual([58]);

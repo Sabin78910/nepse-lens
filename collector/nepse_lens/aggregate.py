@@ -95,16 +95,36 @@ def _fmt(x: float) -> int | float:
     return int(r) if r == int(r) else r
 
 
-def accum_docs(daily: dict[str, Agg]) -> dict[str, dict[str, Any]]:
+DAILY_KEEP = 90  # trading days kept as daily rows; older days are rolled into monthly rows
+
+
+def is_rollup(date: str) -> bool:
+    """Rolled-up dates are months ('2026-04'); real dates are 'YYYY-MM-DD'."""
+    return len(date) == 7
+
+
+def accum_docs(daily: dict[str, Agg], keep: int = DAILY_KEEP) -> dict[str, dict[str, Any]]:
     """Per-symbol accumulation documents from {date: aggregate}.
 
     Shape: {"s": SYMBOL, "dates": [d0, d1, ...], "r": [[date_index, broker, buy_qty, sell_qty, buy_amt, sell_amt]]}
-    Rebuilt from the full daily history, so re-running a day can never double count.
+    The last `keep` trading days stay daily; older days become one row per (month, broker) whose date is 'YYYY-MM'.
+    Totals are unchanged by the rollup. Rebuilt from the full daily history, so re-running a day can never double count.
     """
     dates = sorted(daily)
+    recent = set(dates[-keep:]) if keep > 0 else set()
+    # label -> {(sym, broker): [4 sums]}; label is the day for recent dates, else its month
+    buckets: dict[str, Agg] = defaultdict(dict)
+    for d in dates:
+        label = d if d in recent else d[:7]
+        bucket = buckets[label]
+        for key, v in daily[d].items():
+            acc = bucket.setdefault(key, [0.0, 0.0, 0.0, 0.0])
+            for k in range(4):
+                acc[k] += v[k]
+    labels = sorted(buckets)  # 'YYYY-MM' sorts before the 'YYYY-MM-DD' days of the same month
     by_sym: dict[str, list[list[Any]]] = defaultdict(list)
-    for i, d in enumerate(dates):
-        for (sym, broker), v in sorted(daily[d].items()):
+    for i, label in enumerate(labels):
+        for (sym, broker), v in sorted(buckets[label].items()):
             by_sym[sym].append([i, broker, *(_fmt(x) for x in v)])
     out: dict[str, dict[str, Any]] = {}
     for sym, rows in by_sym.items():
@@ -112,7 +132,7 @@ def accum_docs(daily: dict[str, Agg]) -> dict[str, dict[str, Any]]:
         remap = {old: new for new, old in enumerate(used)}
         out[sym] = {
             "s": sym,
-            "dates": [dates[i] for i in used],
+            "dates": [labels[i] for i in used],
             "r": [[remap[r[0]], *r[1:]] for r in rows],
         }
     return out
