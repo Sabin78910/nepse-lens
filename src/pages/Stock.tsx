@@ -9,6 +9,7 @@ import { formatCompact, formatPrice, formatQty } from "../lib/format";
 import { highLow, periodReturn, rsi } from "../lib/indicators";
 import { newAlert, validateAlert, describeAlert, type AlertKind } from "../lib/alerts";
 import { requestPermission } from "../lib/notify";
+import { toCandles } from "../lib/candles";
 import { sectorName } from "../lib/i18n";
 
 const RANGES = { "1M": 22, "3M": 66, "6M": 130, "1Y": 260 } as const;
@@ -38,7 +39,7 @@ export default function Stock({ symbol }: { symbol: string }) {
   }, [symbol, data.mode]);
 
   const closes = useMemo(() => (prices ?? []).map((p) => p[4]), [prices]);
-  const bars = useMemo(() => (prices ?? []).slice(-RANGES[range]).map((p) => ({ date: p[0], close: p[4], volume: p[5] })), [prices, range]);
+  const bars = useMemo(() => toCandles(prices ?? []).slice(-RANGES[range]), [prices, range]);
   const marketDays = data.manifest.floorsheetDays;
   const rows = useMemo(() => (accum ? netByBroker(accum, win, marketDays) : []), [accum, win, marketDays]);
   const acc = topAccumulators(rows, 8);

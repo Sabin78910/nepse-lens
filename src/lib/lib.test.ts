@@ -7,6 +7,7 @@ import * as M from "./market";
 import * as D from "./data";
 import * as Al from "./alerts";
 import * as P from "./portfolio";
+import { toCandles } from "./candles";
 
 describe("format", () => {
   it("groups numbers in the South Asian system", () => {
@@ -302,5 +303,32 @@ describe("portfolio", () => {
   });
   it("counts days between dates", () => {
     expect(P.daysBetween("2026-01-01", "2027-01-01")).toBe(365);
+  });
+});
+
+describe("toCandles", () => {
+  it("maps OHLC and direction", () => {
+    const c = toCandles([["2026-10-01", 100, 110, 95, 105, 50, 0], ["2026-10-02", 105, 106, 90, 92, 70, 0]]);
+    expect(c).toHaveLength(2);
+    expect(c[0]).toMatchObject({ open: 100, high: 110, low: 95, close: 105, volume: 50, up: true });
+    expect(c[1].up).toBe(false);
+  });
+  it("handles a single row and empty input", () => {
+    expect(toCandles([])).toEqual([]);
+    expect(toCandles([["2026-10-01", 10, 12, 9, 11, 1, 0]])).toHaveLength(1);
+  });
+  it("treats a flat day as up with equal OHLC", () => {
+    const [c] = toCandles([["2026-10-01", 50, 50, 50, 50, 0, 0]]);
+    expect([c.open, c.high, c.low, c.close, c.up]).toEqual([50, 50, 50, 50, true]);
+  });
+  it("handles gaps: bad open uses previous close, bad rows dropped, order and dupes fixed", () => {
+    const c = toCandles([
+      ["2026-10-05", 0, 0, 0, 120, 5, 0],
+      ["2026-10-01", 100, 105, 99, 101, 5, 0],
+      ["2026-10-03", 101, 101, 101, 0, 0, 0],
+      ["2026-10-05", 0, 0, 0, 121, 6, 0],
+    ]);
+    expect(c.map((x) => x.date)).toEqual(["2026-10-01", "2026-10-05"]);
+    expect(c[1]).toMatchObject({ open: 101, high: 121, low: 101, close: 121 });
   });
 });

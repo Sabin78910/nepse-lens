@@ -231,3 +231,6 @@ td { padding: 8px 4px; border-top: 1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+.chart-controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: space-between; }
+.chart .chart-panel svg { height: 90px; }
+.chart .guide { stroke: var(--muted); stroke-dasharray: 3 3; opacity: 0.6; }
