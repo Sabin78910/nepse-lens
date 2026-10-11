@@ -81,6 +81,33 @@ export function cumulativeNet(doc: AccumDoc, broker: number): { date: string; ne
   });
 }
 
+export interface BrokerSeries {
+  broker: number;
+  kind: "acc" | "dist";
+  /** Cumulative net quantity at the end of each date in `dates`, starting from 0 at the window's start. */
+  values: number[];
+  change: number;
+}
+
+/** Top accumulators/distributors for the window, with cumulative net series aligned to the window's dates. */
+export function brokerSeries(doc: AccumDoc, window: Window, allDates?: string[], n = 3): { dates: string[]; series: BrokerSeries[] } {
+  const idx = windowDates(doc, window, allDates);
+  const order = [...idx].sort((a, b) => a - b);
+  const rows = netByBroker(doc, window, allDates);
+  const picks: [number, "acc" | "dist"][] = [
+    ...topAccumulators(rows, n).map((r) => [r.broker, "acc"] as [number, "acc"]),
+    ...topDistributors(rows, n).map((r) => [r.broker, "dist"] as [number, "dist"]),
+  ];
+  const series = picks.map(([broker, kind]) => {
+    const perDay = new Map<number, number>();
+    for (const [di, b, bq, sq] of doc.r) if (b === broker && idx.has(di)) perDay.set(di, (perDay.get(di) ?? 0) + bq - sq);
+    let run = 0;
+    const values = order.map((i) => (run += perDay.get(i) ?? 0));
+    return { broker, kind, values, change: run };
+  });
+  return { dates: order.map((i) => doc.dates[i]), series };
+}
+
 /** Share of total traded volume held by the top-n accumulators' net buys (a concentration signal). */
 export function concentration(rows: BrokerNet[], n = 5): number {
   const volume = rows.reduce((a, r) => a + r.buyQty, 0);
