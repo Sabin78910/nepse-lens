@@ -90,7 +90,7 @@ export default function Market() {
               const a = Math.min(1, Math.abs(h.pct) / 3);
               const bg = h.pct >= 0 ? `rgba(34,197,94,${0.12 + a * 0.55})` : `rgba(239,68,68,${0.12 + a * 0.55})`;
               return (
-                <div className="tile" key={h.sector} style={{ background: bg, flexGrow: Math.max(1, Math.sqrt(h.turnover / 1e7)) }}>
+                <div className="tile" key={h.sector} style={{ background: bg }} title={sectorName(lang, h.sector)}>
                   <span className="tile-name">{sectorName(lang, h.sector)}</span>
                   <Change pct={h.pct} lang={lang} />
                   <small className="tabular">{formatCompact(h.turnover, lang)}</small>
