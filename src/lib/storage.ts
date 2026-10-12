@@ -26,6 +26,7 @@ export function toggle(list: string[], item: string): string[] {
 
 export const KEYS = {
   watchlist: "nl.watchlist",
+  watchSort: "nl.watchSort",
   alerts: "nl.alerts",
   txns: "nl.txns",
   lang: "nl.lang",
