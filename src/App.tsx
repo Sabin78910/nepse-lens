@@ -60,6 +60,7 @@ export default function App() {
   const setTheme = (t: "dark" | "light") => (setThemeState(t), save(KEYS.theme, t));
   const setAlerts = useCallback((a: Alert[]) => (setAlertsState(a), save(KEYS.alerts, a)), []);
   const setTxns = (t: Txn[]) => (setTxnsState(t), save(KEYS.txns, t));
+  const reorderWatch = (n: string[]) => (setWatchlist(n), save(KEYS.watchlist, n));
   const toggleWatch = (s: string) =>
     setWatchlist((w) => {
       const n = toggle(w, s);
@@ -90,7 +91,7 @@ export default function App() {
     );
   }
 
-  const state: AppState = { data, lang, tr, go, watchlist, toggleWatch, alerts, setAlerts, txns, setTxns };
+  const state: AppState = { data, lang, tr, go, watchlist, toggleWatch, setWatchlist: reorderWatch, alerts, setAlerts, txns, setTxns };
   const [, route, param] = hash.split("/");
   let page;
   switch (route) {

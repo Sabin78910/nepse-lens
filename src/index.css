@@ -231,3 +231,9 @@ td { padding: 8px 4px; border-top: 1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+.watch-item { display: flex; align-items: center; gap: 6px; }
+.watch-row { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+.watch-item .move { display: inline-flex; gap: 4px; flex: 0 0 auto; }
+.watch-item .ghost:disabled { opacity: 0.35; cursor: default; }
+@media (max-width: 420px) { .watch-row .spark { display: none; } .watch-row { grid-template-columns: minmax(0, 1fr) auto auto; } }

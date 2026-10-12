@@ -13,6 +13,7 @@ export interface AppState {
   go: (hash: string) => void;
   watchlist: string[];
   toggleWatch: (s: string) => void;
+  setWatchlist: (list: string[]) => void;
   alerts: Alert[];
   setAlerts: (a: Alert[]) => void;
   txns: Txn[];
