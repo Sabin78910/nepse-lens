@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Change, Segmented, useApp } from "../components/ui";
+import QuickActions from "../components/QuickActions";
 import { NetBars, PriceChart } from "../components/Charts";
 import { loadData } from "../lib/api";
 import { SRC } from "../useMarket";
@@ -24,6 +25,7 @@ export default function Stock({ symbol }: { symbol: string }) {
   const [win, setWin] = useState<Window>("1M");
   const [kind, setKind] = useState<AlertKind>("above");
   const [val, setVal] = useState("");
+  const alertInput = useRef<HTMLInputElement>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +75,14 @@ export default function Stock({ symbol }: { symbol: string }) {
         </button>
       </div>
 
+      <QuickActions
+        symbol={symbol}
+        onAlert={() => {
+          alertInput.current?.scrollIntoView({ block: "center" });
+          alertInput.current?.focus();
+        }}
+      />
+
       <Card>
         <div className="quote">
           <span className="hero-value tabular">{formatPrice(stock?.ltp ?? closes.at(-1), lang)}</span>
@@ -118,7 +128,7 @@ export default function Stock({ symbol }: { symbol: string }) {
           <select value={kind} onChange={(e) => setKind(e.target.value as AlertKind)} aria-label="Alert type">
             {(["above", "below", "pctUp", "pctDown"] as AlertKind[]).map((k) => <option key={k} value={k}>{tr(k)}</option>)}
           </select>
-          <input inputMode="decimal" value={val} onChange={(e) => setVal(e.target.value)} placeholder={kind.startsWith("pct") ? "%" : "Rs"} aria-label="Alert value" />
+          <input ref={alertInput} inputMode="decimal" value={val} onChange={(e) => setVal(e.target.value)} placeholder={kind.startsWith("pct") ? "%" : "Rs"} aria-label="Alert value" />
           <button className="primary">{tr("addAlert")}</button>
         </form>
         {err && <p className="error" role="alert">{err}</p>}

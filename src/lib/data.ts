@@ -116,6 +116,13 @@ export function sectorHeatmap(stocks: Stock[]): SectorTile[] {
     .sort((a, b) => b.turnover - a.turnover);
 }
 
+/** Heatmap tile background: stronger fill for bigger moves, capped at +/-3%. */
+export function heatTone(pct: number): string {
+  const a = Math.min(1, Math.abs(pct) / 3);
+  const rgb = pct >= 0 ? "34,197,94" : "239,68,68";
+  return `rgba(${rgb},${(0.12 + a * 0.55).toFixed(2)})`;
+}
+
 /** Symbol prefix matches first, then name matches. Case-insensitive. */
 export function search(securities: Security[], query: string, n = 20): Security[] {
   const q = query.trim().toLowerCase();

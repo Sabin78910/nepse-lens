@@ -231,6 +231,11 @@ describe("market data", () => {
     expect(h[0].sector).toBe("Hydro Power");
     expect(h[0].pct).toBeCloseTo((10 * 11000 + 1 * 202000) / 213000, 2);
   });
+  it("scales heatmap tone with the move and caps it", () => {
+    expect(D.heatTone(0)).toBe("rgba(34,197,94,0.12)");
+    expect(D.heatTone(-3)).toBe("rgba(239,68,68,0.67)");
+    expect(D.heatTone(-30)).toBe(D.heatTone(-3));
+  });
   it("searches symbols before names", () => {
     expect(D.search(secs, "aa").map((s) => s.s)).toEqual(["AA", "AAA"]);
     expect(D.search(secs, "hydro").map((s) => s.s)).toEqual(["AAA", "DDD"]);

@@ -231,3 +231,19 @@ td { padding: 8px 4px; border-top: 1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* terminal pass: denser board, quick actions, readable heatmap at 375px */
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qa { min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; font-size: 13.5px; cursor: pointer; padding: 0 10px; transition: transform 0.25s var(--spring); }
+.qa:active { transform: scale(0.97); }
+.qa.on { color: var(--gold); }
+.qa.primary { border: 0; }
+.stock-row { padding: 6px 6px; min-height: 48px; }
+.card { padding: 14px; }
+.page { gap: 12px; }
+.tile small { opacity: 1; color: var(--text); }
+@media (max-width: 480px) {
+  .heatmap { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile { flex: none; min-height: 72px; flex-grow: 0 !important; overflow-wrap: anywhere; }
+  .tile-name { font-size: 12.5px; }
+}
