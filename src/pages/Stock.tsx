@@ -68,6 +68,7 @@ export default function Stock({ symbol }: { symbol: string }) {
           <h1>{symbol}</h1>
           <p className="muted">{meta?.n ?? stock?.name} · {sectorName(lang, meta?.sec ?? stock?.sector ?? "")}</p>
         </div>
+        <button className="ghost" onClick={() => go(`#/compare/${symbol}`)}>{tr("compare")}</button>
         <button className={`star ${watched ? "on" : ""}`} onClick={() => toggleWatch(symbol)} aria-pressed={watched} aria-label={tr(watched ? "removeWatch" : "addWatch")}>
           {watched ? "★" : "☆"}
         </button>

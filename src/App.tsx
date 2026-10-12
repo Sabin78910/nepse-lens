@@ -14,6 +14,7 @@ import Stock from "./pages/Stock";
 import Brokers from "./pages/Brokers";
 import Watchlist from "./pages/Watchlist";
 import Portfolio from "./pages/Portfolio";
+import Compare from "./pages/Compare";
 import More from "./pages/More";
 
 function useHash() {
@@ -96,6 +97,9 @@ export default function App() {
   switch (route) {
     case "stock":
       page = <Stock symbol={decodeURIComponent(param ?? "")} key={param} />;
+      break;
+    case "compare":
+      page = <Compare hash={hash} />;
       break;
     case "watch":
       page = <Watchlist />;

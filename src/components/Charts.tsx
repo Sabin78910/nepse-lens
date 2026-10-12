@@ -1,6 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import { sma } from "../lib/indicators";
-import { formatCompact, formatPrice, type Lang } from "../lib/format";
+import { formatCompact, formatPct, formatPrice, type Lang } from "../lib/format";
+import type { Normalised } from "../lib/compare";
 
 function path(values: number[], w: number, h: number, pad = 2, min?: number, max?: number): string {
   const lo = min ?? Math.min(...values);
@@ -130,5 +131,40 @@ export function NetBars({ rows, name, lang }: { rows: { broker: number; netQty: 
         );
       })}
     </ul>
+  );
+}
+
+const LINE_STYLES = [
+  { color: "var(--accent, #4da3ff)", dash: undefined },
+  { color: "#f5b942", dash: "6 3" },
+  { color: "#c084fc", dash: "2 3" },
+  { color: "#2dd4bf", dash: "10 3 2 3" },
+];
+
+/** Multi-line % chart. Lines differ by dash pattern and end label as well as colour. */
+export function CompareChart({ norm, lang }: { norm: Normalised; lang: Lang }) {
+  const W = 640;
+  const H = 240;
+  const syms = Object.keys(norm.lines);
+  const all = syms.flatMap((s) => norm.lines[s]);
+  const lo = Math.min(0, ...all);
+  const hi = Math.max(0, ...all);
+  const zero = H - 6 - ((0 - lo) / (hi - lo || 1)) * (H - 12);
+  return (
+    <svg viewBox={`0 0 ${W + 70} ${H}`} className="chart" role="img" aria-label={syms.map((s) => `${s} ${formatPct(norm.lines[s].at(-1), lang)}`).join(", ")}>
+      <line x1="0" x2={W} y1={zero} y2={zero} stroke="var(--line)" strokeDasharray="3 3" />
+      {syms.map((s, i) => {
+        const st = LINE_STYLES[i % LINE_STYLES.length];
+        const v = norm.lines[s];
+        const last = v[v.length - 1];
+        const y = H - 6 - ((last - lo) / (hi - lo || 1)) * (H - 12);
+        return (
+          <g key={s}>
+            <path d={path(v, W, H, 6, lo, hi)} fill="none" stroke={st.color} strokeWidth="2" strokeDasharray={st.dash} strokeLinejoin="round" />
+            <text x={W + 4} y={Math.min(H - 4, Math.max(10, y + 4))} fill={st.color} fontSize="11" fontFamily="var(--mono)">{s} {last > 0 ? "▲" : last < 0 ? "▼" : "■"}{Math.abs(last).toFixed(1)}%</text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
