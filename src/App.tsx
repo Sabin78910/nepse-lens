@@ -9,6 +9,8 @@ import { ageLabel, type Lang } from "./lib/format";
 import { search } from "./lib/data";
 import { notify } from "./lib/notify";
 import { useInstallPrompt } from "./install";
+import { useSync } from "./useSync";
+import type { Lists } from "./lib/syncMerge";
 import Market from "./pages/Market";
 import Stock from "./pages/Stock";
 import Brokers from "./pages/Brokers";
@@ -49,6 +51,14 @@ export default function App() {
   const [alerts, setAlertsState] = useState<Alert[]>(() => load(KEYS.alerts, [] as Alert[]));
   const [txns, setTxnsState] = useState<Txn[]>(() => load(KEYS.txns, [] as Txn[]));
   const { canInstall, install } = useInstallPrompt();
+  const lists = useMemo<Lists>(() => ({ watchlist, alerts, txns }), [watchlist, alerts, txns]);
+  const applySynced = useCallback((l: Lists) => {
+    const same = <T,>(a: T, b: T) => JSON.stringify(a) === JSON.stringify(b);
+    setWatchlist((w) => (same([...w].sort(), [...l.watchlist].sort()) ? w : (save(KEYS.watchlist, l.watchlist), l.watchlist)));
+    setAlertsState((a) => (same(a, l.alerts) ? a : (save(KEYS.alerts, l.alerts), l.alerts)));
+    setTxnsState((t) => (same(t, l.txns) ? t : (save(KEYS.txns, l.txns), l.txns)));
+  }, []);
+  const sync = useSync(lists, applySynced);
   const tr = useMemo(() => makeTr(lang), [lang]);
 
   useEffect(() => {
@@ -107,7 +117,7 @@ export default function App() {
       page = <Portfolio />;
       break;
     case "more":
-      page = <More lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} canInstall={canInstall} install={install} />;
+      page = <More lang={lang} setLang={setLang} theme={theme} setTheme={setTheme} canInstall={canInstall} install={install} sync={sync} />;
       break;
     default:
       page = <Market />;

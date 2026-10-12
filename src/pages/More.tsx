@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { Card, Segmented, useApp } from "../components/ui";
 import { breakEvenPrice, buyCost, sellResult, FEE_SCHEDULE_NOTE } from "../lib/fees";
+import SyncCard from "../components/SyncCard";
+import type { SyncApi } from "../useSync";
 import { formatNumber, formatRs, type Lang } from "../lib/format";
 
-export default function More({ lang, setLang, theme, setTheme, canInstall, install }: {
+export default function More({ lang, setLang, theme, setTheme, canInstall, install, sync }: {
   lang: Lang;
   setLang: (l: Lang) => void;
   theme: "dark" | "light";
   setTheme: (t: "dark" | "light") => void;
   canInstall: boolean;
   install: () => void;
+  sync: SyncApi;
 }) {
   const { data, tr } = useApp();
   const [tab, setTab] = useState<"open" | "upcoming" | "closed">("open");
@@ -41,6 +44,7 @@ export default function More({ lang, setLang, theme, setTheme, canInstall, insta
         )}
         <p className="muted small">{tr("source")}: sharesansar.com</p>
       </Card>
+      <SyncCard sync={sync} />
       <Card title={tr("settings")}>
         <div className="setting">
           <span>{tr("language")}</span>
