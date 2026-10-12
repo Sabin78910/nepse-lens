@@ -231,3 +231,8 @@ td { padding: 8px 4px; border-top: 1px solid var(--line); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+.sync-code { display: block; overflow-wrap: anywhere; padding: 10px 12px; margin: 6px 0; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); font-family: var(--mono); font-size: 12.5px; user-select: all; }
+.sync-chip { background: rgba(34, 197, 94, 0.16); color: var(--text); }
+.sync-chip.offline, .sync-chip.syncing { background: rgba(245, 196, 81, 0.16); }
+.sync-chip.error { background: rgba(239, 68, 68, 0.18); }

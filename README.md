@@ -49,4 +49,6 @@ python -m nepse_lens live --out /tmp/live --force       # one snapshot
 python -m nepse_lens eod --data /tmp/data --meta         # end of day
 ```
 
+Sync: optional "Sync across devices" (More tab) shares your watchlist, alerts and portfolio lots between devices. Data is end-to-end encrypted on your device before upload (AES-GCM); the server stores only ciphertext. The sync code (kept in localStorage under `sabin-labs-sync-code`, shared with other Sabin Labs apps) is the only key: keep it private, it cannot be recovered.
+
 Privacy: https://sabin78910.github.io/privacy-policy/ · License: MIT
