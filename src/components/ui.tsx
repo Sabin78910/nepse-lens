@@ -1,10 +1,11 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { ARROW, direction, formatPct, formatPrice, formatChange, type Lang } from "../lib/format";
 import type { Stock } from "../lib/data";
 import type { Alert } from "../lib/alerts";
 import type { Txn } from "../lib/portfolio";
 import type { MarketData } from "../useMarket";
 import { t, type Key } from "../lib/i18n";
+import { FLASH_MS, tween, type Tick } from "../lib/pulse";
 
 export interface AppState {
   data: MarketData;
@@ -42,6 +43,40 @@ export function Change({ pct, change, lang, big }: { pct: number; change?: numbe
   );
 }
 
+const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Price that counts to its new value and flashes on a tick. Reduced motion: the value alone. */
+export function PriceCell({ symbol, value }: { symbol: string; value: number }) {
+  const { lang, data } = useApp();
+  const tick: Tick | undefined = data.ticks[symbol];
+  const [shown, setShown] = useState(value);
+  const [flash, setFlash] = useState<Tick | null>(null);
+  const from = useRef(value);
+  useEffect(() => {
+    if (reducedMotion() || from.current === value) {
+      from.current = value;
+      setShown(value);
+      return;
+    }
+    const start = from.current;
+    const t0 = performance.now();
+    let raf = 0;
+    setFlash(tick ?? null);
+    const step = (now: number) => {
+      const k = (now - t0) / FLASH_MS;
+      setShown(tween(start, value, k));
+      if (k < 1) raf = requestAnimationFrame(step);
+      else {
+        from.current = value;
+        setFlash(null);
+      }
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value, tick, data.tickId]);
+  return <span className={`num tabular${flash ? ` flash-${flash}` : ""}`}>{formatPrice(shown, lang)}</span>;
+}
+
 export function StockList({ stocks, metric = "pct" }: { stocks: Stock[]; metric?: "pct" | "turnover" }) {
   const { lang, go } = useApp();
   return (
@@ -53,7 +88,7 @@ export function StockList({ stocks, metric = "pct" }: { stocks: Stock[]; metric?
               <strong>{s.symbol}</strong>
               <small className="muted">{s.name}</small>
             </span>
-            <span className="num tabular">{formatPrice(s.ltp, lang)}</span>
+            <PriceCell symbol={s.symbol} value={s.ltp} />
             <Change pct={s.pct} lang={lang} />
             {metric === "turnover" && <span className="sr-only">turnover</span>}
           </button>

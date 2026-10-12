@@ -228,6 +228,11 @@ td { padding: 8px 4px; border-top: 1px solid var(--line); }
   .banner { max-width: 1088px; margin: 12px auto 0; }
   .tabbar { left: 50%; right: auto; transform: translateX(-50%); width: 560px; bottom: 14px; border: 1px solid var(--line); border-radius: 20px; padding-bottom: 6px; box-shadow: var(--shadow); }
 }
+.flash-up { animation: flash-up 400ms ease-out; }
+.flash-down { animation: flash-down 400ms ease-out; }
+@keyframes flash-up { from { background: rgba(34, 197, 94, 0.4); } to { background: transparent; } }
+@keyframes flash-down { from { background: rgba(239, 68, 68, 0.4); } to { background: transparent; } }
+.live-dot { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--up); vertical-align: middle; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
