@@ -5,6 +5,7 @@ import { KEYS, load, save, toggle } from "./lib/storage";
 import { evaluateAlerts, describeAlert, type Alert } from "./lib/alerts";
 import type { Txn } from "./lib/portfolio";
 import { formatCountdown, marketClock } from "./lib/market";
+import { ageSeconds } from "./lib/pulse";
 import { ageLabel, type Lang } from "./lib/format";
 import { search } from "./lib/data";
 import { notify } from "./lib/notify";
@@ -148,6 +149,8 @@ function Header() {
     return () => clearInterval(id);
   }, []);
   const clock = marketClock(now, data.holidays);
+  const live = data.mode === "live" && clock.phase === "open";
+  const age = ageSeconds(data.latest.fetchedAt, now);
   const results = search(data.securities, q, 8);
   const label = clock.phase === "open" ? tr("open") : clock.phase === "pre" ? tr("preOpen") : tr("closed");
   return (
@@ -189,7 +192,8 @@ function Header() {
         )}
       </div>
       <p className="updated muted tabular">
-        {tr("updated")}: {data.mode === "sample" ? data.latest.status.asOf.replace("T", " ").slice(0, 16) : ageLabel(data.latest.fetchedAt, now, lang)}
+        {live && <span className="live-dot" aria-hidden="true" />}
+        {tr("updated")}: {data.mode === "sample" ? data.latest.status.asOf.replace("T", " ").slice(0, 16) : live && age < 120 ? tr("secAgo", { n: String(age) }) : ageLabel(data.latest.fetchedAt, now, lang)}
       </p>
     </header>
   );
