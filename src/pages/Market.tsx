@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Card, Change, Segmented, StockList, useApp } from "../components/ui";
 import { Sparkline } from "../components/Charts";
-import { breadth, mostActive, sectorHeatmap, topGainers, topLosers } from "../lib/data";
+import { breadth, heatTone, mostActive, sectorHeatmap, topGainers, topLosers } from "../lib/data";
 import { formatCompact, formatNumber, formatPrice } from "../lib/format";
 import { sectorName } from "../lib/i18n";
 
@@ -87,10 +87,8 @@ export default function Market() {
         <Card title={tr("heatmap")}>
           <div className="heatmap">
             {heat.map((h) => {
-              const a = Math.min(1, Math.abs(h.pct) / 3);
-              const bg = h.pct >= 0 ? `rgba(34,197,94,${0.12 + a * 0.55})` : `rgba(239,68,68,${0.12 + a * 0.55})`;
               return (
-                <div className="tile" key={h.sector} style={{ background: bg, flexGrow: Math.max(1, Math.sqrt(h.turnover / 1e7)) }}>
+                <div className="tile" key={h.sector} style={{ background: heatTone(h.pct), flexGrow: Math.max(1, Math.sqrt(h.turnover / 1e7)) }}>
                   <span className="tile-name">{sectorName(lang, h.sector)}</span>
                   <Change pct={h.pct} lang={lang} />
                   <small className="tabular">{formatCompact(h.turnover, lang)}</small>
