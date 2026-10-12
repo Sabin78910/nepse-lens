@@ -7,6 +7,7 @@ import type { Txn } from "./lib/portfolio";
 import { formatCountdown, marketClock } from "./lib/market";
 import { ageLabel, type Lang } from "./lib/format";
 import { search } from "./lib/data";
+import { resolveTheme, systemPrefersLight, type Theme } from "./lib/theme";
 import { notify } from "./lib/notify";
 import { useInstallPrompt } from "./install";
 import Market from "./pages/Market";
@@ -44,7 +45,7 @@ export default function App() {
   const { data, error, reload } = useMarket();
   const { hash, go } = useHash();
   const [lang, setLangState] = useState<Lang>(() => load<Lang>(KEYS.lang, "en"));
-  const [theme, setThemeState] = useState<"dark" | "light">(() => load(KEYS.theme, "dark"));
+  const [theme, setThemeState] = useState<Theme>(() => resolveTheme(load<unknown>(KEYS.theme, null), systemPrefersLight()));
   const [watchlist, setWatchlist] = useState<string[]>(() => load(KEYS.watchlist, ["NABIL", "NICA", "HDL", "UPPER"]));
   const [alerts, setAlertsState] = useState<Alert[]>(() => load(KEYS.alerts, [] as Alert[]));
   const [txns, setTxnsState] = useState<Txn[]>(() => load(KEYS.txns, [] as Txn[]));
