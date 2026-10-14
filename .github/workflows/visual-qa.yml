@@ -6,8 +6,6 @@ on:
   workflow_run:
     workflows: ["Deploy to GitHub Pages"]
     types: [completed]
-  schedule:
-    - cron: "30 3 * * 1"
   workflow_dispatch:
     inputs:
       review:
@@ -60,7 +58,7 @@ jobs:
             echo "Screenshots: artifact **screenshots** of $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           } > body.md
           gh issue create --title "Visual QA: fix layout problems on the live site" --body-file body.md --label ready --label visual-qa
-          gh workflow run claude-agent.yml
+          echo "agent restart disabled by owner"
       - name: AI design review
         if: github.event_name == 'schedule' || inputs.review
         uses: anthropics/claude-code-action@v1
@@ -85,4 +83,4 @@ jobs:
         if: always() && (github.event_name == 'schedule' || inputs.review)
         run: |
           sleep 15  # the issue list can lag right after creation; the agent exits fast if nothing is queued
-          gh workflow run claude-agent.yml
+          echo "agent restart disabled by owner"
