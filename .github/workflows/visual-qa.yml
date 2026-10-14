@@ -3,9 +3,6 @@ name: Visual QA
 # Layout overflow, load failures or JavaScript errors become a `ready` issue for the cloud agent.
 # Every Monday (or on demand) Claude also reviews the screenshots against the redesign brief.
 on:
-  workflow_run:
-    workflows: ["Deploy to GitHub Pages"]
-    types: [completed]
   workflow_dispatch:
     inputs:
       review:
